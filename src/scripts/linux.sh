@@ -29,8 +29,8 @@ cleanup_lists() {
 # Function to update php ppa
 update_lists() {
   if [ "$lists_updated" = "false" ]; then
-    cleanup_lists >/dev/null 2>&1
-    sudo "$debconf_fix" apt-get update >/dev/null 2>&1
+    cleanup_lists 
+    sudo "$debconf_fix" apt-get update 
   fi
 }
 
@@ -38,13 +38,13 @@ update_lists() {
 configure_pecl() {
   if ! [ -e /tmp/pecl_config ]; then
     if ! command -v pecl >/dev/null || ! command -v pear >/dev/null; then
-      add_pecl >/dev/null 2>&1
+      add_pecl 
     fi
     for script in pear pecl; do
-      sudo "$script" config-set php_ini "${pecl_file:-$ini_file}" >/dev/null 2>&1
-      sudo "$script" channel-update "$script".php.net >/dev/null 2>&1
+      sudo "$script" config-set php_ini "${pecl_file:-$ini_file}" 
+      sudo "$script" channel-update "$script".php.net 
     done
-    echo '' | sudo tee /tmp/pecl_config >/dev/null 2>&1
+    echo '' | sudo tee /tmp/pecl_config 
   fi
 }
 
@@ -64,7 +64,7 @@ get_pecl_version() {
 # Function to install PECL extensions and accept default options
 pecl_install() {
   local extension=$1
-  yes '' | sudo pecl install -f "$extension" >/dev/null 2>&1
+  yes '' | sudo pecl install -f "$extension" 
 }
 
 # Function to test if extension is loaded
@@ -82,8 +82,8 @@ delete_extension() {
   extension=$1
   sudo sed -Ei "/=(.*\/)?\"?$extension/d" "$ini_file"
   sudo sed -Ei "/=(.*\/)?\"?$extension/d" "$pecl_file"
-  sudo rm -rf "$scan_dir"/*"$extension"* >/dev/null 2>&1
-  sudo rm -rf "$ext_dir"/"$extension".so >/dev/null 2>&1
+  sudo rm -rf "$scan_dir"/*"$extension"* 
+  sudo rm -rf "$ext_dir"/"$extension".so 
 }
 
 # Function to disable and delete extensions
@@ -105,8 +105,8 @@ add_extension() {
   elif check_extension "$extension"; then
     add_log "$tick" "$extension" "Enabled"
   elif ! check_extension "$extension"; then
-    eval "$install_command" >/dev/null 2>&1 ||
-    (update_lists && eval "$install_command" >/dev/null 2>&1) || pecl_install "$extension"
+    eval "$install_command"  ||
+    (update_lists && eval "$install_command" ) || pecl_install "$extension"
     (check_extension "$extension" && add_log "$tick" "$extension" "Installed and enabled") ||
     add_log "$cross" "$extension" "Could not install $extension on PHP $semver"
   fi
@@ -131,7 +131,7 @@ add_pecl_extension() {
   else
     delete_extension "$extension"
     (
-      sudo pecl install -f "$extension-$pecl_version" >/dev/null 2>&1 &&
+      sudo pecl install -f "$extension-$pecl_version"  &&
       check_extension "$extension" &&
       add_log "$tick" "$extension" "Installed and enabled"
     ) || add_log "$cross" "$extension" "Could not install $extension-$pecl_version on PHP $semver"
@@ -157,7 +157,7 @@ configure_composer() {
     exit 1;
   fi
   if ! [ -e "$composer_json" ]; then
-    echo '{}' | tee "$composer_json" >/dev/null 2>&1
+    echo '{}' | tee "$composer_json" 
     sudo chmod 644 "$composer_json"
   fi
   composer -q config -g process-timeout 0
@@ -193,9 +193,9 @@ add_tool() {
     elif [ "$tool" = "cs2pr" ]; then
       sudo sed -i 's/\r$//; s/exit(9)/exit(0)/' "$tool_path"
     elif [ "$tool" = "phive" ]; then
-      add_extension curl "$apt_install php$version-curl" extension >/dev/null 2>&1
-      add_extension mbstring "$apt_install php$version-mbstring" extension >/dev/null 2>&1
-      add_extension xml "$apt_install php$version-xml" extension >/dev/null 2>&1
+      add_extension curl "$apt_install php$version-curl" extension 
+      add_extension mbstring "$apt_install php$version-mbstring" extension 
+      add_extension xml "$apt_install php$version-xml" extension 
     fi
     add_log "$tick" "$tool" "Added"
   else
@@ -210,8 +210,8 @@ add_composertool() {
   release=$2
   prefix=$3
   (
-    sudo rm -f "$composer_lock" >/dev/null 2>&1 || true
-    composer global require "$prefix$release" >/dev/null 2>&1 &&
+    sudo rm -f "$composer_lock"  || true
+    composer global require "$prefix$release"  &&
     add_log "$tick" "$tool" "Added"
   ) || add_log "$cross" "$tool" "Could not setup $tool"
   if [ -e "$composer_bin/composer" ]; then
@@ -225,10 +225,10 @@ add_composertool() {
 # Function to setup phpize and php-config
 add_devtools() {
   if ! [ -e "/usr/bin/phpize$version" ] || ! [ -e "/usr/bin/php-config$version" ]; then
-    update_lists && $apt_install php"$version"-dev php"$version"-xml >/dev/null 2>&1
+    update_lists && $apt_install php"$version"-dev php"$version"-xml 
   fi
-  sudo update-alternatives --set php-config /usr/bin/php-config"$version" >/dev/null 2>&1
-  sudo update-alternatives --set phpize /usr/bin/phpize"$version" >/dev/null 2>&1
+  sudo update-alternatives --set php-config /usr/bin/php-config"$version" 
+  sudo update-alternatives --set phpize /usr/bin/phpize"$version" 
   configure_pecl
 }
 
@@ -241,7 +241,7 @@ setup_master() {
 add_pecl() {
   add_devtools
   if [ ! -e /usr/bin/pecl ]; then
-    $apt_install php-pear >/dev/null 2>&1
+    $apt_install php-pear 
   fi
   configure_pecl
   add_log "$tick" "PECL" "Added"
@@ -295,26 +295,26 @@ sudo mkdir -m 777 -p "$HOME/.composer" /var/run /run/php
 . /etc/lsb-release
 if [ "$DISTRIB_RELEASE" = "20.04" ]; then
   if ! apt-cache policy | grep -q ondrej/php; then
-    cleanup_lists >/dev/null 2>&1
-    LC_ALL=C.UTF-8 sudo apt-add-repository ppa:ondrej/php -y >/dev/null 2>&1
+    cleanup_lists 
+    LC_ALL=C.UTF-8 sudo apt-add-repository ppa:ondrej/php -y 
   fi
 fi
 
 if [ "$existing_version" != "$version" ]; then
   if [ ! -e "/usr/bin/php$version" ]; then
     if [ "$version" = "8.0" ]; then
-      setup_master >/dev/null 2>&1
+      setup_master 
     else
       update_lists
       IFS=' ' read -r -a packages <<< "$(echo "cli curl mbstring xml intl" | sed "s/[^ ]*/php$version-&/g")"
-      $apt_install "${packages[@]}" >/dev/null 2>&1
+      $apt_install "${packages[@]}" 
     fi
     status="Installed"
   else
     status="Switched to"
   fi
 
-  switch_version >/dev/null 2>&1
+  switch_version 
 else
   status="Found"
 fi
@@ -328,9 +328,9 @@ scan_dir=$(php --ini | grep additional | sed -e "s|.*: s*||")
 ini_file=$(php --ini | grep "Loaded Configuration" | sed -e "s|.*:s*||" | sed "s/ //g")
 ext_dir=$(php -i | grep "extension_dir => /" | sed -e "s|.*=> s*||")
 pecl_file="$scan_dir"/99-pecl.ini
-echo '' | sudo tee "$pecl_file" >/dev/null 2>&1
+echo '' | sudo tee "$pecl_file" 
 configure_php
-sudo rm -rf /usr/local/bin/phpunit >/dev/null 2>&1
+sudo rm -rf /usr/local/bin/phpunit 
 sudo chmod 777 "$ini_file" "$pecl_file" "$tool_path_dir"
 sudo cp "$dist"/../src/configs/*.json "$RUNNER_TOOL_CACHE/"
 add_log "$tick" "PHP" "$status PHP $semver"
