@@ -89,7 +89,7 @@ self_hosted_setup() {
       add_log "$cross" "PHP" "PHP $version is not supported on self-hosted runner"
       exit 1
     else
-      self_hosted_helper >/dev/null 2>&1
+      self_hosted_helper 
     fi
   fi
 }
@@ -107,7 +107,7 @@ check_extension() {
 # Function to enable existing extensions.
 enable_extension() {
   if [ -e /tmp/setup_php_dismod ] && grep -q "$1" /tmp/setup_php_dismod; then
-    sudo phpenmod -v "$version" "$1" >/dev/null 2>&1
+    sudo phpenmod -v "$version" "$1" 
   fi
   if ! check_extension "$1" && [ -e "${ext_dir:?}/$1.so" ]; then
     echo "$2=${ext_dir:?}/$1.so" | sudo tee -a "${pecl_file:-${ini_file[@]}}" >/dev/null
@@ -127,13 +127,13 @@ configure_php() {
 configure_pecl() {
   if ! [ -e /tmp/pecl_config ]; then
     if ! command -v pecl >/dev/null || ! command -v pear >/dev/null; then
-      add_pecl >/dev/null 2>&1
+      add_pecl 
     fi
     for script in pear pecl; do
       sudo "$script" config-set php_ini "${pecl_file:-${ini_file[@]}}"
       sudo "$script" channel-update "$script".php.net
     done
-    echo '' | sudo tee /tmp/pecl_config >/dev/null 2>&1
+    echo '' | sudo tee /tmp/pecl_config 
   fi
 }
 
@@ -153,8 +153,8 @@ get_pecl_version() {
 # Function to install PECL extensions and accept default options
 pecl_install() {
   local extension=$1
-  configure_pecl >/dev/null 2>&1
-  yes '' 2>/dev/null | sudo pecl install -f "$extension" >/dev/null 2>&1
+  configure_pecl 
+  yes '' 2>/dev/null | sudo pecl install -f "$extension" 
 }
 
 # Function to setup pre-release extensions using PECL.
@@ -193,7 +193,7 @@ configure_composer() {
     exit 1
   fi
   if ! [ -e "$composer_json" ]; then
-    echo '{}' | tee "$composer_json" >/dev/null 2>&1
+    echo '{}' | tee "$composer_json" 
     sudo chmod 644 "$composer_json"
   fi
   composer -q config -g process-timeout 0
@@ -245,8 +245,8 @@ add_composertool() {
     fi
   fi
   (
-    sudo rm -f "$composer_lock" >/dev/null 2>&1 || true
-    composer global require "$prefix$release" >/dev/null 2>&1
+    sudo rm -f "$composer_lock"  || true
+    composer global require "$prefix$release" 
     json=$(grep "$prefix$tool" "$composer_json") &&
     tool_version=$(get_tool_version 'echo' "$json") &&
     add_log "$tick" "$tool" "Added $tool $tool_version"
@@ -287,6 +287,6 @@ add_extension_from_github() {
     git submodule update --init --recursive || exit 1
     phpize && ./configure && make -j"$(nproc)" && sudo make install
     enable_extension "$extension" "$prefix"
-  ) >/dev/null 2>&1
+  ) 
   add_extension_log "$extension-$org/$repo@$release" "Installed and enabled"
 }
